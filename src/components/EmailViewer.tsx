@@ -125,7 +125,6 @@ const EmailViewer: React.FC<EmailViewerProps> = ({
           title={`Email body: ${subject}`}
           className="w-full border-0 bg-white"
           srcDoc={emailDocument}
-          sandbox="allow-same-origin allow-popups allow-popups-to-escape-sandbox"
           referrerPolicy="no-referrer"
           style={{ height: iframeHeight }}
           onLoad={handleIframeLoad}
