@@ -7,6 +7,7 @@ import {
   InboxIcon,
   TrashIcon,
   XMarkIcon,
+  ArrowPathIcon,
 } from "@heroicons/react/24/outline";
 import axios from "axios";
 import { useNotification } from "../../context/NotificationContext";
@@ -136,6 +137,7 @@ export default function MessagePage() {
   const [sortBy, setSortBy] = useState<SortBy>(savedPreferences.sortBy);
   const [sortOrder, setSortOrder] = useState<SortOrder>(savedPreferences.sortOrder);
   const [totalPages, setTotalPages] = useState(1);
+  const [syncingGmail, setSyncingGmail] = useState(false);
   const statusFilterOptions = getStatusFilterOptions(viewMode);
   const effectiveStatusFilter =
     statusFilter === "all" || statusFilterOptions.includes(statusFilter)
@@ -302,6 +304,28 @@ export default function MessagePage() {
     setCurrentPage(1);
   };
 
+  const handleSyncGmail = async () => {
+    if (!currentCompanyId) return;
+
+    setSyncingGmail(true);
+    try {
+      await axios.post(
+        `${import.meta.env.VITE_API_URL || ""}/message/fetch-all`,
+        { company_id: currentCompanyId },
+        {
+          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+        }
+      );
+      notify("success", "Gmail inbox synced.");
+      fetchMessages();
+    } catch (error) {
+      console.error("Failed to sync Gmail:", error);
+      notify("error", "Failed to sync Gmail.");
+    } finally {
+      setSyncingGmail(false);
+    }
+  };
+
   const handleAssignMenuOpen = (id: string) => {
     setAssignMenuId(id === assignMenuId ? null : id);
     setStatusMenuId(null);
@@ -429,6 +453,15 @@ export default function MessagePage() {
               </button>
             ))}
           </div>
+          <button
+            type="button"
+            onClick={handleSyncGmail}
+            disabled={syncingGmail || !currentCompanyId}
+            className="inline-flex items-center gap-2 border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-60"
+          >
+            <ArrowPathIcon className={`h-4 w-4 ${syncingGmail ? "animate-spin" : ""}`} />
+            {syncingGmail ? "Syncing" : "Sync Gmail"}
+          </button>
         </div>
 
         <div className="flex flex-wrap items-center gap-3 mb-4">
