@@ -1,4 +1,6 @@
 import React, {useState, useEffect} from "react";
+import axios from "axios";
+import { useNotification } from "../context/NotificationContext";
 
 type SMSReplyProps = {
   threadId?: string;
@@ -6,10 +8,12 @@ type SMSReplyProps = {
 };
 
 const SMSReplySection: React.FC<SMSReplyProps> = ({
+  threadId,
   replyFromParent
 }) => {
   const [reply, setReply] = useState(replyFromParent);
   const [sending, setSending] = useState(false);
+  const { notify } = useNotification();
 
   useEffect(() => {
     setReply(replyFromParent);
@@ -20,13 +24,17 @@ const SMSReplySection: React.FC<SMSReplyProps> = ({
     if (!reply.trim()) return;
     setSending(true);
     try {
-      //await axios.post(
-        //`${import.meta.env.VITE_API_URL || ""}/message/${threadId}/reply`,
-        //{ content: reply }
-      //);
+      await axios.post(
+        `${import.meta.env.VITE_API_URL || ""}/twilio/messages/${threadId}/reply`,
+        { content: reply },
+        {
+          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+        }
+      );
       setReply("");
+      notify("success", "SMS sent.");
     } catch (err) {
-      // Handle error (e.g., show toast)
+      notify("error", "Failed to send SMS.");
     } finally {
       setSending(false);
     }
