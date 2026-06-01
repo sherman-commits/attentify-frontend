@@ -388,17 +388,27 @@ export default function MessagePage() {
 
   const handleDelete = async (id: string) => {
     try {
-      await axios.patch(
-        `${import.meta.env.VITE_API_URL}/message/${id}`,
-        {
-          field: "trashed",
-          value: true
-        },
-        {
-          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-        }
-      );
-      notify("success", "Message moved to trash.");
+      if (viewMode === "trashed") {
+        await axios.delete(
+          `${import.meta.env.VITE_API_URL}/message/${id}`,
+          {
+            headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+          }
+        );
+        notify("success", "Message permanently deleted.");
+      } else {
+        await axios.patch(
+          `${import.meta.env.VITE_API_URL}/message/${id}`,
+          {
+            field: "trashed",
+            value: true
+          },
+          {
+            headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+          }
+        );
+        notify("success", "Message moved to trash.");
+      }
       fetchMessages();
     } catch (error) {
       notify("error", "Failed to delete message. Please try again.");
