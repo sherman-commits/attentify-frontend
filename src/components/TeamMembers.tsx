@@ -206,11 +206,11 @@ export default function TeamMembers() {
         }
       );
 
-      notify("success", "Member deleted");
+      notify("success", "Member removed from team");
       fetchMembers();
     } catch (error) {
-      console.error("Failed to delete member:", error);
-      notify("error", "Failed to delete member");
+      console.error("Failed to remove member:", error);
+      notify("error", "Failed to remove member");
     }
   };
 
@@ -329,7 +329,7 @@ export default function TeamMembers() {
                             : undefined
                       }
                     >
-                      Delete
+                      Remove
                     </button>
                   </td>
                 </RoleWrapper>
@@ -362,7 +362,8 @@ export default function TeamMembers() {
       <ConfirmDialog
         isOpen={isOpen}
         title="Delete Member"
-        message="Are you sure you want to delete this member? This action cannot be undone."
+        message="Are you sure you want to remove this member from the team? Their account and history will be kept."
+        confirmText="Remove"
         onConfirm={() => {
           if (selectedMember) {
             handleDeleteMember(selectedMember.id);

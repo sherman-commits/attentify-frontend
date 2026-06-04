@@ -5,6 +5,7 @@ type ConfirmDialogProps = {
   isOpen: boolean;
   title?: string;
   message: string;
+  confirmText?: string;
   onConfirm: () => void;
   onCancel: () => void;
 };
@@ -13,6 +14,7 @@ const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
   isOpen,
   title = "Are you sure?",
   message,
+  confirmText = "Delete",
   onConfirm,
   onCancel,
 }) => {
@@ -34,7 +36,7 @@ const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
             onClick={onConfirm}
             className="px-4 py-2 text-sm  bg-red-500 text-white hover:bg-red-600"
           >
-            Delete
+            {confirmText}
           </button>
         </div>
       </div>
