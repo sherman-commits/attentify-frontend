@@ -8,7 +8,11 @@ import axios from "axios";
 import ConfirmDialog from "./ConfirmDialog";
 
 type Role = "company_owner" | "store_owner" | "agent" | "readonly";
-type CustomPermission = "permanent_delete_ticket";
+type CustomPermission =
+  | "permanent_delete_ticket"
+  | "resolve_ticket_without_owner_approval"
+  | "process_refund_without_owner_approval"
+  | "process_cancellation_without_owner_approval";
 
 interface Member {
   id: string;
@@ -20,6 +24,9 @@ interface Member {
 
 const customPermissions: { key: CustomPermission; label: string }[] = [
   { key: "permanent_delete_ticket", label: "Permanently delete ticket" },
+  { key: "resolve_ticket_without_owner_approval", label: "Resolve without owner approval" },
+  { key: "process_refund_without_owner_approval", label: "Refund without owner approval" },
+  { key: "process_cancellation_without_owner_approval", label: "Cancel without owner approval" },
 ];
 
 const sortedPermissions = (permissions: string[] = []) => [...permissions].sort().join("|");

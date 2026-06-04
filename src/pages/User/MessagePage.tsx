@@ -149,6 +149,7 @@ export default function MessagePage() {
   const statusFilterOptions = getStatusFilterOptions(viewMode);
   const userRole = user?.role || "agent";
   const canMoveMessages = ownerRoles.includes(userRole);
+  const canUpdateStatus = userRole !== "readonly";
   const canPermanentlyDeleteMessages = canMoveMessages || customPermissions.includes(permanentDeletePermission);
   const effectiveStatusFilter =
     statusFilter === "all" || statusFilterOptions.includes(statusFilter)
@@ -670,7 +671,7 @@ export default function MessagePage() {
                     </td>
                     {/* Assigned */}
                     <td className="px-6 py-4 w-1/10">
-                      {ownerRoles.includes(userRole) ? (
+                      {canUpdateStatus ? (
                         <button
                           className="flex items-center gap-2 px-2 py-1 bg-gray-100 hover:bg-blue-50 rounded cursor-pointer"
                           onClick={() => handleAssignMenuOpen(msg._id)}
