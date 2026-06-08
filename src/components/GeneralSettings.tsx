@@ -10,6 +10,7 @@ export default function GeneralSettings() {
   const { currentCompanyId } = useCompany();
   const { notify } = useNotification();
   const { user } = useUser();
+  const [currentUserRole, setCurrentUserRole] = useState(user?.role || "agent");
 
   // Initial states - you can replace with real fetched data or empty strings
   const [companyName, setCompanyName] = useState("");
@@ -45,6 +46,7 @@ export default function GeneralSettings() {
 
           setEmail(data.email || "");
           setEmailDraft(data.email || "");
+          setCurrentUserRole(data.current_user_role || user?.role || "agent");
 
         }
       } catch (error) {
@@ -54,7 +56,7 @@ export default function GeneralSettings() {
     };
 
     fetchSettings();
-  }, [currentCompanyId]);
+  }, [currentCompanyId, user?.role]);
 
   // Save function with unified update-company API call
   const saveField = async (field: string) => {
@@ -192,7 +194,7 @@ export default function GeneralSettings() {
             disabled={!companyNameEdit}
             placeholder="Enter company name"
           />
-          <RoleWrapper allowedRoles={["company_owner"]} userRole={user?.role || "agent"}>
+          <RoleWrapper allowedRoles={["company_owner"]} userRole={currentUserRole}>
             <div className="flex justify-end mt-1">
               {!companyNameEdit ? (
                 <EditButton onClick={() => setCompanyNameEdit(true)} />
@@ -228,7 +230,7 @@ export default function GeneralSettings() {
             disabled={!siteUrlEdit}
             placeholder="Enter site URL"
           />
-          <RoleWrapper allowedRoles={["company_owner"]} userRole={user?.role || "agent"}>
+          <RoleWrapper allowedRoles={["company_owner"]} userRole={currentUserRole}>
             <div className="flex justify-end mt-1">
               {!siteUrlEdit ? (
                 <EditButton onClick={() => setSiteUrlEdit(true)} />
@@ -268,7 +270,7 @@ export default function GeneralSettings() {
             placeholder="Enter email"
           />
 
-          <RoleWrapper allowedRoles={["company_owner"]} userRole={user?.role || "agent"}>
+          <RoleWrapper allowedRoles={["company_owner"]} userRole={currentUserRole}>
             <div className="flex justify-end mt-1">
               {!emailEdit ? (
                 <EditButton onClick={() => setEmailEdit(true)} />

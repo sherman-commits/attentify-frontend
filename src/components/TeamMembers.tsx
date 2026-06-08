@@ -42,7 +42,8 @@ export default function TeamMembers() {
   const [hasChanges, setHasChanges] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const [selectedMember, setSelectedMember] = useState<Member | null>(null);
-  const canManageMembers = user?.role === "admin" || user?.role === "company_owner";
+  const [currentUserRole, setCurrentUserRole] = useState<string>(user?.role || "agent");
+  const canManageMembers = currentUserRole === "admin" || currentUserRole === "company_owner";
   const activeOwnerCount = members.filter(
     (member) => member.status === "active" && member.role === "company_owner"
   ).length;
@@ -64,9 +65,11 @@ export default function TeamMembers() {
         }
       );
       const data = response.data;
+      const fetchedMembers = Array.isArray(data) ? data : data?.members || [];
       if (data) {
-        setMembers(data || []);
-        setOriginalMembers(data || []);
+        setMembers(fetchedMembers);
+        setOriginalMembers(fetchedMembers);
+        setCurrentUserRole(data?.current_user_role || user?.role || "agent");
       }
     } catch (error) {
       console.error("Error fetching members:", error);
@@ -78,7 +81,7 @@ export default function TeamMembers() {
     if (!currentCompanyId) return;
 
     fetchMembers();
-  }, [currentCompanyId]);
+  }, [currentCompanyId, user?.role]);
 
   const handleRoleChange = (index: number, newRole: Role) => {
     const member = members[index];
@@ -241,7 +244,7 @@ export default function TeamMembers() {
             specify member roles to enhance security.
           </p>
         </div>
-        <RoleWrapper allowedRoles={["admin", "company_owner"]} userRole={user?.role || "agent"}>
+        <RoleWrapper allowedRoles={["admin", "company_owner"]} userRole={currentUserRole}>
           <button
             onClick={handleAddMember}
             className="px-4 py-2 bg-blue-600 text-white text-sm font-medium hover:bg-blue-700"
@@ -259,7 +262,7 @@ export default function TeamMembers() {
               <th className="px-4 py-2 border-b border-gray-300">Role</th>
               <th className="px-4 py-2 border-b border-gray-300">Custom Permissions</th>
               <th className="px-4 py-2 border-b border-gray-300">Status</th>
-              <RoleWrapper allowedRoles={["admin", "company_owner"]} userRole={user?.role || "agent"}>
+              <RoleWrapper allowedRoles={["admin", "company_owner"]} userRole={currentUserRole}>
                 <th className="px-4 py-2 border-b border-gray-300">Actions</th>
               </RoleWrapper>
             </tr>
@@ -315,7 +318,7 @@ export default function TeamMembers() {
                   </div>
                 </td>
                 <td className="px-4 py-2">{renderStatusTag(member.status)}</td>
-                <RoleWrapper allowedRoles={["admin", "company_owner"]} userRole={user?.role || "agent"}>
+                <RoleWrapper allowedRoles={["admin", "company_owner"]} userRole={currentUserRole}>
                   <td className="px-4 py-2">
                     <button
                       onClick={() => onDelete(member.id)}
@@ -340,7 +343,7 @@ export default function TeamMembers() {
       </div>
 
       {hasChanges && (
-        <RoleWrapper allowedRoles={["admin", "company_owner"]} userRole={user?.role || "agent"}>
+        <RoleWrapper allowedRoles={["admin", "company_owner"]} userRole={currentUserRole}>
           <div className="flex justify-end gap-3 mt-4">
             <button
               onClick={handleSaveChanges}
