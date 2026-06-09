@@ -13,6 +13,7 @@ import Dashboard from "./pages/User/Dashboard";
 import MessagePage from "./pages/User/MessagePage";
 import MessageDetailPage from "./pages/User/MessageDetailPage";
 import Settings from "./pages/User/Settings";
+import AuditLogPage from "./pages/User/AuditLogPage";
 import ProtectedRoute from './routes/ProtectedRoute';
 import GmailAccountPage from "./pages/User/GmailAccountPage";
 import PhoneAccountPage from "./pages/User/PhoneAccountPage";
@@ -158,6 +159,15 @@ function App() {
                     element={
                       <ProtectedRoute allowedRoles={['company_owner', 'store_owner', 'agent', 'readonly']}>
                         <Settings />
+                      </ProtectedRoute>
+                    }
+                  />
+
+                  <Route
+                    path="/settings/audit-log"
+                    element={
+                      <ProtectedRoute allowedRoles={['company_owner', 'store_owner', 'agent', 'readonly']}>
+                        <AuditLogPage />
                       </ProtectedRoute>
                     }
                   />
