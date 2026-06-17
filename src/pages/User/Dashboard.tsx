@@ -382,6 +382,8 @@ export default function Dashboard() {
                   </div>
                 )}
               </Section>
+
+              <Section
                 title="Recent Messages"
                 action={<Link to="/message" className="text-sm text-blue-600 hover:text-blue-700">Open inbox</Link>}
               >
