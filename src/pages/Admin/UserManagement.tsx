@@ -28,6 +28,19 @@ const STATUSES = [
   { value: "suspended", label: "Suspended" },
 ];
 
+const formatLocalDate = (value?: string) => {
+  if (!value) return "-";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return date.toLocaleString("en-US", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+};
+
 const UserManagement: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [newUser, setNewUser] = useState(defaultNewUser);
@@ -292,7 +305,7 @@ const UserManagement: React.FC = () => {
                         />
                       </td>
                       <td className="px-4 py-2">
-                        {u.last_login?.slice(0, 19).replace("T", " ") || "-"}
+                        {formatLocalDate(u.last_login)}
                       </td>
                       <td className="px-4 py-2 text-center">
                         <div className="flex gap-2 justify-center">
@@ -318,7 +331,7 @@ const UserManagement: React.FC = () => {
                       <td className="px-4 py-2">{roleLabel(u.role)}</td>
                       <td className="px-4 py-2">{statusLabel(u.status)}</td>
                       <td className="px-4 py-2">{teamLabel(u)}</td>
-                      <td className="px-4 py-2">{u.last_login?.slice(0, 19).replace("T", " ") || "-"}</td>
+                      <td className="px-4 py-2">{formatLocalDate(u.last_login)}</td>
                       <td className="px-4 py-2 text-center">
                         <div className="flex gap-2 justify-center">
                           <button
