@@ -16,7 +16,7 @@ import Layout from "../../layouts/Layout";
 import { usePageTitle } from "../../context/PageTitleContext";
 import { useCompany } from "../../context/CompanyContext";
 import { useNotification } from "../../context/NotificationContext";
-import { buildLogText, formatUtcDate, type AuditLog } from "../../utils/auditLog";
+import { buildLogText, formatLocalDate as formatAuditLocalDate, type AuditLog } from "../../utils/auditLog";
 
 interface DashboardMessage {
   _id: string;
@@ -439,7 +439,7 @@ export default function Dashboard() {
                         <ClockIcon className="mt-0.5 h-4 w-4 shrink-0 text-gray-500" />
                         <div className="min-w-0">
                           <div className="truncate text-sm text-gray-800">{buildLogText(log)}</div>
-                          <div className="mt-1 text-xs text-gray-500">{formatUtcDate(log.created_at)}</div>
+                          <div className="mt-1 text-xs text-gray-500">{formatAuditLocalDate(log.created_at)}</div>
                         </div>
                       </div>
                     ))}

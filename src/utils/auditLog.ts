@@ -26,14 +26,16 @@ export const roleLabel = (role?: string) => {
   }
 };
 
-export const formatUtcDate = (value: string) => {
+export const formatLocalDate = (value: string) => {
   const date = new Date(value);
-  const yyyy = date.getUTCFullYear();
-  const mm = String(date.getUTCMonth() + 1).padStart(2, "0");
-  const dd = String(date.getUTCDate()).padStart(2, "0");
-  const hh = String(date.getUTCHours()).padStart(2, "0");
-  const min = String(date.getUTCMinutes()).padStart(2, "0");
-  return `${yyyy}-${mm}-${dd} ${hh}:${min} UTC`;
+  if (Number.isNaN(date.getTime())) return value;
+  return date.toLocaleString("en-US", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
 };
 
 const detailValue = (details: Record<string, unknown> | undefined, key: string) => {
@@ -43,7 +45,7 @@ const detailValue = (details: Record<string, unknown> | undefined, key: string) 
 
 export const buildLogText = (log: AuditLog) => {
   const parts = [
-    `${formatUtcDate(log.created_at)} - User: ${log.actor_name || "Unknown user"} (${roleLabel(log.actor_role)})`,
+    `${formatLocalDate(log.created_at)} - User: ${log.actor_name || "Unknown user"} (${roleLabel(log.actor_role)})`,
     `Action: ${log.action}`,
   ];
 
