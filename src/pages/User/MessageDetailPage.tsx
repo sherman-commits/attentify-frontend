@@ -14,6 +14,7 @@ import { usePageTitle } from "../../context/PageTitleContext";
 import { useNotification } from "../../context/NotificationContext";
 import Comments from "../../components/Comments";
 import { useCompany } from "../../context/CompanyContext";
+import { initSocket } from "../../services/socket";
 
 const buildOrderOptions = (orders: any[], mentionedOrderName?: string) => {
   const normalizedMentioned = mentionedOrderName?.trim();
@@ -70,6 +71,22 @@ const MessageDetailPage = () => {
     setTitle("Message Detail");
   }, [setTitle]);
 
+  const reloadMessage = async () => {
+    if (!threadId) return;
+    try {
+      const response = await axios.get(
+        `${import.meta.env.VITE_API_URL || ""}/message/${threadId}`,
+        {
+          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+        }
+      );
+      hasFetchedOrder.current = false;
+      setMessage(response.data);
+    } catch (error) {
+      console.error("Error refreshing message:", error);
+    }
+  };
+
   // Fetch message thread
   useEffect(() => {
     hasFetchedMessage.current = false;
@@ -102,6 +119,20 @@ const MessageDetailPage = () => {
       fetchMessage();
     }
   }, [threadId]);
+
+  useEffect(() => {
+    if (!currentCompanyId || !threadId) return;
+    const socket = initSocket();
+    const handleGmailUpdate = (data: { company_id?: string }) => {
+      if (data.company_id && data.company_id !== currentCompanyId) return;
+      reloadMessage();
+    };
+
+    socket.on("gmail_update", handleGmailUpdate);
+    return () => {
+      socket.off("gmail_update", handleGmailUpdate);
+    };
+  }, [currentCompanyId, threadId]);
 
   // Analyze email to get order info
   useEffect(() => {

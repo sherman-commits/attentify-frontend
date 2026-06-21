@@ -17,6 +17,7 @@ import { usePageTitle } from "../../context/PageTitleContext";
 import { useCompany } from "../../context/CompanyContext";
 import { useNotification } from "../../context/NotificationContext";
 import { buildLogText, formatLocalDate as formatAuditLocalDate, type AuditLog } from "../../utils/auditLog";
+import { initSocket } from "../../services/socket";
 
 interface DashboardMessage {
   _id: string;
@@ -201,6 +202,20 @@ export default function Dashboard() {
 
   useEffect(() => {
     fetchDashboard();
+  }, [currentCompanyId]);
+
+  useEffect(() => {
+    if (!currentCompanyId) return;
+    const socket = initSocket();
+    const handleGmailUpdate = (data: { company_id?: string }) => {
+      if (data.company_id && data.company_id !== currentCompanyId) return;
+      fetchDashboard();
+    };
+
+    socket.on("gmail_update", handleGmailUpdate);
+    return () => {
+      socket.off("gmail_update", handleGmailUpdate);
+    };
   }, [currentCompanyId]);
 
   const needsAttention = [

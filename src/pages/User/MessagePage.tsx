@@ -195,19 +195,24 @@ export default function MessagePage() {
   useEffect(() => {
     const socket = initSocket();
 
-    socket.on("connect", () => {
+    const handleConnect = () => {
       console.log("Socket connected:", socket.id);
-    });
+    };
 
-    socket.on("gmail_update", (data) => {
+    const handleGmailUpdate = (data: { company_id?: string }) => {
       console.log("Gmail update:", data);
+      if (currentCompanyId && data.company_id && data.company_id !== currentCompanyId) return;
       fetchMessages();
-    });
+    };
+
+    socket.on("connect", handleConnect);
+    socket.on("gmail_update", handleGmailUpdate);
 
     return () => {
-      socket.off("gmail_update");
+      socket.off("connect", handleConnect);
+      socket.off("gmail_update", handleGmailUpdate);
     };
-  }, []);
+  }, [currentCompanyId]);
   
   useEffect(() => {
     if (!currentCompanyId) return;
