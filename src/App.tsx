@@ -1,30 +1,36 @@
 import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { lazy, Suspense } from "react";
 import Home from "./pages/Home";
 
-// auth
-import Login from "./pages/Auth/Login";
-import Signup from "./pages/Auth/Signup";
-import OAuthCallbackLogin from "./pages/Auth/OAuthCallbackLogin";
-import OAuthCallbackRegister from "./pages/Auth/OAuthCallbackRegister";
-import ForgetPassword from "./pages/Auth/ForgetPassword";
-import ResetPassword from "./pages/Auth/ResetPassword";
+// Lazy-loaded page components for code splitting
+const Login = lazy(() => import("./pages/Auth/Login"));
+const Signup = lazy(() => import("./pages/Auth/Signup"));
+const OAuthCallbackLogin = lazy(() => import("./pages/Auth/OAuthCallbackLogin"));
+const OAuthCallbackRegister = lazy(() => import("./pages/Auth/OAuthCallbackRegister"));
+const ForgetPassword = lazy(() => import("./pages/Auth/ForgetPassword"));
+const ResetPassword = lazy(() => import("./pages/Auth/ResetPassword"));
 
-import Dashboard from "./pages/User/Dashboard";
-import MessagePage from "./pages/User/MessagePage";
-import MessageDetailPage from "./pages/User/MessageDetailPage";
-import Settings from "./pages/User/Settings";
-import AuditLogPage from "./pages/User/AuditLogPage";
+const Dashboard = lazy(() => import("./pages/User/Dashboard"));
+const MessagePage = lazy(() => import("./pages/User/MessagePage"));
+const MessageDetailPage = lazy(() => import("./pages/User/MessageDetailPage"));
+const Settings = lazy(() => import("./pages/User/Settings"));
+const AuditLogPage = lazy(() => import("./pages/User/AuditLogPage"));
+const GmailAccountPage = lazy(() => import("./pages/User/GmailAccountPage"));
+const PhoneAccountPage = lazy(() => import("./pages/User/PhoneAccountPage"));
+const ShopifyPage = lazy(() => import("./pages/User/ShopifyPage"));
+const ShopifySuccess = lazy(() => import("./pages/User/ShopifySuccess"));
+const OrderPage = lazy(() => import("./pages/User/OrderPage"));
+const OrderDetailPage = lazy(() => import("./pages/User/OrderDetailPage"));
+const RegisterCompany = lazy(() => import("./pages/User/RegisterCompany"));
+const InvitationPage = lazy(() => import("./pages/User/InvitationPage"));
+const AcceptInvite = lazy(() => import("./pages/User/AcceptInvite"));
+const AskAcceptInvitation = lazy(() => import("./pages/User/AskAcceptInvitation"));
+
+const AdminDashboard = lazy(() => import("./pages/Admin/Dashboard"));
+const UserManagement = lazy(() => import("./pages/Admin/UserManagement"));
+const Governance = lazy(() => import("./pages/Admin/Governance"));
+
 import ProtectedRoute from './routes/ProtectedRoute';
-import GmailAccountPage from "./pages/User/GmailAccountPage";
-import PhoneAccountPage from "./pages/User/PhoneAccountPage";
-import ShopifyPage from "./pages/User/ShopifyPage";
-import ShopifySuccess from "./pages/User/ShopifySuccess";
-import OrderPage from "./pages/User/OrderPage";
-import OrderDetailPage from "./pages/User/OrderDetailPage";
-import RegisterCompany from "./pages/User/RegisterCompany";
-import InvitationPage from "./pages/User/InvitationPage";
-import AcceptInvite from "./pages/User/AcceptInvite";
-import AskAcceptInvitation from "./pages/User/AskAcceptInvitation";
 
 import { UserProvider } from "./context/UserContext";
 import { NotificationProvider } from "./context/NotificationContext";
@@ -32,11 +38,13 @@ import { CompanyProvider } from "./context/CompanyContext";
 import { PageTitleProvider } from "./context/PageTitleContext";
 import { ConfirmDialogProvider } from "./context/ConfirmDialogContext";
 
-// admin pages
-import AdminDashboard from "./pages/Admin/Dashboard";
-import UserManagement from "./pages/Admin/UserManagement";
-import Governance from "./pages/Admin/Governance";
 import "./App.css";
+
+const PageLoader = () => (
+  <div className="flex items-center justify-center min-h-[200px]">
+    <p className="text-gray-500">Loading...</p>
+  </div>
+);
 
 function App() {  
   return (
@@ -46,6 +54,7 @@ function App() {
           <CompanyProvider>
             <PageTitleProvider>
               <BrowserRouter>
+                <Suspense fallback={<PageLoader />}>
                 <Routes>
                   <Route path="/" element={<Home />} />
 
@@ -212,6 +221,7 @@ function App() {
                     }
                   />
                 </Routes>
+                </Suspense>
               </BrowserRouter>
             </PageTitleProvider>
           </CompanyProvider>
