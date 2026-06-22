@@ -93,6 +93,7 @@ const getStatusFilterOptions = (mode: ViewMode) => {
 };
 
 const MESSAGE_PREFERENCES_KEY = "attentify.messageListPreferences";
+const MESSAGE_LIST_CACHE_TTL_MS = 5 * 60 * 1000;
 
 const defaultMessagePreferences = {
   viewMode: "inbox" as ViewMode,
@@ -104,6 +105,28 @@ const defaultMessagePreferences = {
   sortBy: "created_at" as SortBy,
   sortOrder: "desc" as SortOrder,
 };
+
+type MessageListRequestParams = {
+  company_id: string;
+  search: string;
+  page: number;
+  size: number;
+  view_mode: ViewMode;
+  assigned_filter: AssignedFilter;
+  order_filter: OrderFilter;
+  status_filter: string;
+  sort_by: SortBy;
+  sort_order: SortOrder;
+};
+
+type MessageListCache = {
+  params: MessageListRequestParams;
+  messages: Message[];
+  totalPages: number;
+  storedAt: number;
+};
+
+let messageListCache: MessageListCache | null = null;
 
 const ownerRoles = ["company_owner", "store_owner"];
 const permanentDeletePermission = "permanent_delete_ticket";
@@ -155,7 +178,7 @@ export default function MessagePage() {
   const savedPreferences = loadMessagePreferences();
   const [selected, setSelected] = useState<string[]>([]);
   const [viewMode, setViewMode] = useState<ViewMode>(savedPreferences.viewMode);
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [messages, setMessages] = useState<Message[]>(() => messageListCache?.messages || []);
   const [_, setLoading] = useState<boolean>(false);
 
   // Track menu state for assign and status per message
@@ -170,7 +193,7 @@ export default function MessagePage() {
   const { user } = useUser();
   const menuRef = useRef<HTMLDivElement>(null);
 
-  const [search, setSearch] = useState<string>("");
+  const [search, setSearch] = useState<string>(messageListCache?.params.search || "");
   const [currentPage, setCurrentPage] = useState<number>(savedPreferences.currentPage);
   const [pageSize, setPageSize] = useState(savedPreferences.pageSize);
   const [assignedFilter, setAssignedFilter] = useState<AssignedFilter>(savedPreferences.assignedFilter);
@@ -178,7 +201,7 @@ export default function MessagePage() {
   const [statusFilter, setStatusFilter] = useState<string>(savedPreferences.statusFilter);
   const [sortBy, setSortBy] = useState<SortBy>(savedPreferences.sortBy);
   const [sortOrder, setSortOrder] = useState<SortOrder>(savedPreferences.sortOrder);
-  const [totalPages, setTotalPages] = useState(1);
+  const [totalPages, setTotalPages] = useState(messageListCache?.totalPages || 1);
   const [syncingGmail, setSyncingGmail] = useState(false);
   const [customPermissions, setCustomPermissions] = useState<string[]>([]);
   const statusFilterOptions = getStatusFilterOptions(viewMode);
@@ -202,7 +225,7 @@ export default function MessagePage() {
     const handleGmailUpdate = (data: { company_id?: string }) => {
       console.log("Gmail update:", data);
       if (currentCompanyId && data.company_id && data.company_id !== currentCompanyId) return;
-      fetchMessages();
+      fetchMessages({ force: true });
     };
 
     socket.on("connect", handleConnect);
@@ -276,32 +299,55 @@ export default function MessagePage() {
     );
   }, [viewMode, currentPage, pageSize, assignedFilter, orderFilter, statusFilter, sortBy, sortOrder]);
 
-  const fetchMessages = async () => {
+  const fetchMessages = async (options: { force?: boolean } = {}) => {
     if (!currentCompanyId) return;
+
+    const requestParams: MessageListRequestParams = {
+      company_id: currentCompanyId,
+      search,
+      page: currentPage,
+      size: pageSize,
+      view_mode: viewMode,
+      assigned_filter: assignedFilter,
+      order_filter: orderFilter,
+      status_filter: effectiveStatusFilter,
+      sort_by: sortBy,
+      sort_order: sortOrder,
+    };
+
+    const cachedList = messageListCache;
+    const cacheMatches =
+      cachedList &&
+      Date.now() - cachedList.storedAt < MESSAGE_LIST_CACHE_TTL_MS &&
+      JSON.stringify(cachedList.params) === JSON.stringify(requestParams);
+
+    if (!options.force && cacheMatches && cachedList) {
+      setMessages(cachedList.messages);
+      setTotalPages(cachedList.totalPages);
+      return;
+    }
 
     setLoading(true);
     try {
       const response = await axios.get(
         `${import.meta.env.VITE_API_URL || ""}/message/company_messages`,
         {
-          params: { 
-            company_id: currentCompanyId,
-            search,
-            page: currentPage,
-            size: pageSize,
-            view_mode: viewMode,
-            assigned_filter: assignedFilter,
-            order_filter: orderFilter,
-            status_filter: effectiveStatusFilter,
-            sort_by: sortBy,
-            sort_order: sortOrder,
-          },
+          params: requestParams,
           headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
         }
       );
 
-      setMessages(response.data?.messages);
-      setTotalPages(response.data?.totalPages);
+      const nextMessages = response.data?.messages || [];
+      const nextTotalPages = response.data?.totalPages || 1;
+
+      setMessages(nextMessages);
+      setTotalPages(nextTotalPages);
+      messageListCache = {
+        params: requestParams,
+        messages: nextMessages,
+        totalPages: nextTotalPages,
+        storedAt: Date.now(),
+      };
     } catch (error) {
       console.error("Failed to load messages:", error);
       notify("error", "Failed to load messages");
@@ -397,7 +443,7 @@ export default function MessagePage() {
         0
       );
       notify("success", syncedCount ? `Gmail synced. ${syncedCount} new messages added.` : "Gmail synced. No new messages found.");
-      fetchMessages();
+      fetchMessages({ force: true });
     } catch (error: any) {
       console.error("Failed to sync Gmail:", error);
       const detail = error?.response?.data?.detail;
@@ -435,7 +481,7 @@ export default function MessagePage() {
         }
       );
       notify("success", `Message assigned to ${member.name}.`);
-      fetchMessages();
+      fetchMessages({ force: true });
     } catch (error) {
       notify("error", "Failed to assign. Please try again.");
     }
@@ -456,7 +502,7 @@ export default function MessagePage() {
         }
       );
       notify("success", "Message status updated successfully.");
-      fetchMessages();
+      fetchMessages({ force: true });
     } catch (error) {
       notify("error", "Failed to update status. Please try again.");
     }
@@ -505,7 +551,7 @@ export default function MessagePage() {
         );
         notify("success", "Message moved to trash.");
       }
-      fetchMessages();
+      fetchMessages({ force: true });
     } catch (error) {
       notify("error", "Failed to delete message. Please try again.");
     }
@@ -524,7 +570,7 @@ export default function MessagePage() {
         }
       );
       notify("success", archived ? "Message archived." : "Message restored to inbox.");
-      fetchMessages();
+      fetchMessages({ force: true });
     } catch (error) {
       notify("error", "Failed to update archive status. Please try again.");
     }
