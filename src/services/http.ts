@@ -11,6 +11,9 @@ const authRoutes = [
   "/accept-invite",
 ];
 
+// Always send httpOnly cookies with requests (for cross-subdomain cookie auth)
+axios.defaults.withCredentials = true;
+
 export function setupHttpInterceptors() {
   axios.interceptors.response.use(
     (response) => response,

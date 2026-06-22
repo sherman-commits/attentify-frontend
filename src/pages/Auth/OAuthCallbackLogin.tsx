@@ -1,20 +1,10 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { jwtDecode } from "jwt-decode"
 import { useUser } from "../../context/UserContext";
-import { useCompany } from "../../context/CompanyContext"; 
+import { useCompany } from "../../context/CompanyContext";
+import axios from "axios";
 
-type JwtPayload = {
-  sub: string;
-  user_id: string;
-  name: string,
-  email: string,
-  company_id: string,
-  role: string,
-  status: string,
-  companies: any,
-  redirect_url?: string,
-};
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000/api/v1";
 
 const OAuthCallbackLogin = () => {
   const navigate = useNavigate();
@@ -22,38 +12,38 @@ const OAuthCallbackLogin = () => {
   const { setCompanies, setCurrentCompanyId } = useCompany();
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const token = params.get("token");
+    const fetchAuth = async () => {
+      try {
+        const response = await axios.get(`${API_URL}/auth/me`, {
+          withCredentials: true,
+        });
+        const data = response.data;
 
-    if (token) {
-      localStorage.setItem("token", token);
+        // Store token in localStorage for subsequent API calls via Authorization header
+        // (the httpOnly cookie is used only for the initial OAuth exchange)
+        const token = data.token;
+        if (token) {
+          localStorage.setItem("token", token);
+        }
 
-      const decoded = jwtDecode<JwtPayload>(token);
-      const user = {
-        id: decoded.user_id,
-        name: decoded.name,
-        email: decoded.email,
-        company_id: decoded?.company_id || "",
-        role: decoded.role,
-        status: decoded?.status || "",
-        companies: decoded?.companies || []
+        const user = data.user;
+        setUser(user);
+        localStorage.setItem("user", JSON.stringify(user));
+
+        if (user.companies?.length) {
+          setCompanies(user.companies);
+          setCurrentCompanyId(user.company_id);
+        }
+
+        const redirectPath = data.redirect_url || (user.role === "admin" ? "/admin/dashboard" : "/dashboard");
+        setTimeout(() => navigate(redirectPath), 500);
+      } catch {
+        navigate("/login");
       }
+    };
 
-      setUser(user);
-      localStorage.setItem('user', JSON.stringify(user));
-      if (user.companies?.length) {
-        setCompanies(user.companies);
-        setCurrentCompanyId(user.company_id); // default company from login
-      }
-
-      let redirectPath = decoded.redirect_url || "/dashboard";
-      if (!decoded.redirect_url && user.role === "admin") {
-        redirectPath = "/admin/dashboard";
-      }
-
-      setTimeout(() => navigate(redirectPath), 1000); // redirect after short delay
-    }
-  }, [navigate]);
+    fetchAuth();
+  }, [navigate, setUser, setCompanies, setCurrentCompanyId]);
 
   return <p>Loading...</p>;
 };

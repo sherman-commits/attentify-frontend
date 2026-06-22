@@ -11,6 +11,7 @@ export async function login(email: string, password: string) {
         headers: {
           "Content-Type": "application/x-www-form-urlencoded",
         },
+        withCredentials: true,
       }
     );
     return response.data;
@@ -34,6 +35,7 @@ export async function register(email: string, password: string, firstName: strin
         headers: {
           "Content-Type": "application/json",
         },
+        withCredentials: true,
       }
     );
     return response.data;
@@ -56,6 +58,7 @@ export async function registerWithToken(email: string, password: string, firstNa
         headers: {
           "Content-Type": "application/json",
         },
+        withCredentials: true,
       }
     );
     return response.data;

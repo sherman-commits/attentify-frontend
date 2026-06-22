@@ -1,20 +1,10 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { jwtDecode } from "jwt-decode"
 import { useUser } from "../../context/UserContext";
-import { useCompany } from "../../context/CompanyContext"; 
+import { useCompany } from "../../context/CompanyContext";
+import axios from "axios";
 
-type JwtPayload = {
-  sub: string;
-  user_id: string;
-  name: string,
-  email: string,
-  company_id?: string,
-  role?: string,
-  status?: string,
-  companies?: any,
-  redirect_url: string,
-};
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000/api/v1";
 
 const OAuthCallbackRegister = () => {
   const navigate = useNavigate();
@@ -22,32 +12,38 @@ const OAuthCallbackRegister = () => {
   const { setCompanies, setCurrentCompanyId } = useCompany();
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const token = params.get("token");
+    const fetchAuth = async () => {
+      try {
+        const response = await axios.get(`${API_URL}/auth/me`, {
+          withCredentials: true,
+        });
+        const data = response.data;
 
-    if ( token ) {
-      localStorage.setItem("token", token);
+        // Store token in localStorage for subsequent API calls via Authorization header
+        const token = data.token;
+        if (token) {
+          localStorage.setItem("token", token);
+        }
 
-      const decoded = jwtDecode<JwtPayload>(token)
-      const user = {
-        id: decoded.user_id,
-        name: decoded.name,
-        email: decoded.email
+        const user = data.user;
+        localStorage.setItem("user", JSON.stringify(user));
+        setUser(user);
+
+        if (user.companies?.length) {
+          setCompanies(user.companies);
+          setCurrentCompanyId(user.company_id || "");
+        }
+
+        setTimeout(() => {
+          navigate(data.redirect_url || "/login");
+        }, 500);
+      } catch {
+        navigate("/login");
       }
+    };
 
-      localStorage.setItem('user', JSON.stringify(user));
-      setUser(user);
-
-      if (decoded?.companies?.length) {
-        setCompanies(decoded?.companies);
-        setCurrentCompanyId(decoded?.company_id || ""); 
-      }
-
-      setTimeout(() => {
-        navigate(decoded?.redirect_url || "/login");
-      }, 1000);
-    }
-  }, [navigate]);
+    fetchAuth();
+  }, [navigate, setUser, setCompanies, setCurrentCompanyId]);
 
   return <p>Loading...</p>;
 };
