@@ -183,7 +183,7 @@ export default function MessagePage() {
   const [selected, setSelected] = useState<string[]>([]);
   const [viewMode, setViewMode] = useState<ViewMode>(cachedParams?.view_mode || savedPreferences.viewMode);
   const [messages, setMessages] = useState<Message[]>(() => messageListCache?.messages || []);
-  const [_, setLoading] = useState<boolean>(false);
+  const [loading, setLoading] = useState<boolean>(false);
 
   // Track menu state for assign and status per message
   const [assignMenuId, setAssignMenuId] = useState<string | null>(null);
@@ -311,20 +311,22 @@ export default function MessagePage() {
     };
   }, []);
 
-  // Restore scroll on mount and after messages load
+  // Restore scroll after fully loaded
   const hasRestoredRef = useRef(false);
+  const scrollTargetRef = useRef(0);
   useEffect(() => {
     const savedY = sessionStorage.getItem("messageListScrollY");
-    if (savedY && !hasRestoredRef.current && messages.length > 0) {
+    if (savedY) scrollTargetRef.current = parseInt(savedY, 10);
+  }, []);
+
+  useEffect(() => {
+    if (!hasRestoredRef.current && !loading && messages.length > 0 && scrollTargetRef.current > 0) {
       hasRestoredRef.current = true;
-      const y = parseInt(savedY, 10);
-      if (y > 0) {
-        setTimeout(() => {
-          window.scrollTo({ top: y, behavior: "instant" as ScrollBehavior });
-        }, 200);
-      }
+      requestAnimationFrame(() => {
+        window.scroll(0, scrollTargetRef.current);
+      });
     }
-  }, [messages]);
+  }, [loading, messages]);
 
   const fetchMessages = async (options: { force?: boolean } = {}) => {
     if (!currentCompanyId) return;

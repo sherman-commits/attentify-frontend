@@ -137,14 +137,6 @@ export default function OrderPage() {
     );
   }, [pageSize, selectedShop, sortBy, sortOrder]);
 
-  // Save scroll on unmount, restore after orders load
-  const hasRestoredOrderRef = useRef(false);
-  useEffect(() => {
-    return () => {
-      sessionStorage.setItem("orderListScrollY", String(window.scrollY));
-    };
-  }, []);
-
   // Re-fetch when navigating back from detail
   useEffect(() => {
     if (location.pathname === "/order") {
@@ -152,19 +144,22 @@ export default function OrderPage() {
     }
   }, [location.pathname]);
 
-  // Restore scroll after orders load (runs once)
+  // Restore scroll after orders load (runs once, multiple retries)
+  const hasRestoredOrderRef = useRef(false);
+  const scrollTargetOrderRef = useRef(0);
   useEffect(() => {
     const savedY = sessionStorage.getItem("orderListScrollY");
-    if (savedY && !hasRestoredOrderRef.current && orders.length > 0) {
+    if (savedY) scrollTargetOrderRef.current = parseInt(savedY, 10);
+  }, []);
+
+  useEffect(() => {
+    if (!hasRestoredOrderRef.current && !loading && orders.length > 0 && scrollTargetOrderRef.current > 0) {
       hasRestoredOrderRef.current = true;
-      const y = parseInt(savedY, 10);
-      if (y > 0) {
-        setTimeout(() => {
-          window.scrollTo({ top: y, behavior: "instant" as ScrollBehavior });
-        }, 200);
-      }
+      requestAnimationFrame(() => {
+        window.scroll(0, scrollTargetOrderRef.current);
+      });
     }
-  }, [orders]);
+  }, [loading, orders]);
 
   const fetchOrders = async (options: { force?: boolean } = {}) => {
     if (!currentCompanyId) return;
