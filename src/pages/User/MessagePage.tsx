@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState, type ChangeEvent } from "react";
+import React, { useEffect, useLayoutEffect, useRef, useState, type ChangeEvent } from "react";
 import { Link, useLocation } from "react-router-dom";
 import Layout from "../../layouts/Layout";
 import {
@@ -183,7 +183,7 @@ export default function MessagePage() {
   const [selected, setSelected] = useState<string[]>([]);
   const [viewMode, setViewMode] = useState<ViewMode>(cachedParams?.view_mode || savedPreferences.viewMode);
   const [messages, setMessages] = useState<Message[]>(() => messageListCache?.messages || []);
-  const [loading, setLoading] = useState<boolean>(false);
+  const [, setLoading] = useState<boolean>(false);
 
   // Track menu state for assign and status per message
   const [assignMenuId, setAssignMenuId] = useState<string | null>(null);
