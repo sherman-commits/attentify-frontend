@@ -303,10 +303,13 @@ export default function MessagePage() {
     );
   }, [viewMode, currentPage, pageSize, assignedFilter, orderFilter, statusFilter, sortBy, sortOrder]);
 
+  // Save scroll on unmount and before page unload
   useEffect(() => {
-    // Save scroll on unmount
+    const save = () => sessionStorage.setItem("messageListScrollY", String(window.scrollY));
+    window.addEventListener("beforeunload", save);
     return () => {
-      sessionStorage.setItem("messageListScrollY", String(window.scrollY));
+      save();
+      window.removeEventListener("beforeunload", save);
     };
   }, []);
 
@@ -379,10 +382,12 @@ export default function MessagePage() {
     if (hasRestoredRef.current || loading || messages.length === 0) return;
     const y = Number(sessionStorage.getItem("messageListScrollY"));
     if (!y) return;
-    hasRestoredRef.current = true;
-    setTimeout(() => {
-      window.scrollTo({ top: y, behavior: "instant" as ScrollBehavior });
-    }, 100);
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        window.scrollTo({ top: y, behavior: "auto" });
+        hasRestoredRef.current = true;
+      });
+    });
   }, [loading, messages.length]);
 
   useEffect(() => {
@@ -809,7 +814,7 @@ export default function MessagePage() {
                         to={`/message/${msg._id}`}
                         onMouseEnter={() => prefetchMessage(msg._id)}
                         onFocus={() => prefetchMessage(msg._id)}
-                        onClick={() => sessionStorage.setItem("messageListScrollY", String(window.scrollY))}
+                        onMouseDown={() => sessionStorage.setItem("messageListScrollY", String(window.scrollY))}
                       >
                         {msg.title || "(no subject)"}
                       </Link>

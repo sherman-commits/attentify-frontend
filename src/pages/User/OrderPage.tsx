@@ -139,14 +139,16 @@ export default function OrderPage() {
 
   // Restore scroll after loading completes
   const hasRestoredOrderRef = useRef(false);
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (hasRestoredOrderRef.current || loading || orders.length === 0) return;
     const y = Number(sessionStorage.getItem("orderListScrollY"));
     if (!y) return;
-    hasRestoredOrderRef.current = true;
-    setTimeout(() => {
-      window.scrollTo({ top: y, behavior: "instant" as ScrollBehavior });
-    }, 100);
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        window.scrollTo({ top: y, behavior: "auto" });
+        hasRestoredOrderRef.current = true;
+      });
+    });
   }, [loading, orders.length]);
 
   const fetchOrders = async (options: { force?: boolean } = {}) => {
@@ -365,7 +367,7 @@ export default function OrderPage() {
                           className="font-medium text-blue-600 hover:text-blue-700"
                           onMouseEnter={() => prefetchOrder(order)}
                           onFocus={() => prefetchOrder(order)}
-                          onClick={() => sessionStorage.setItem("orderListScrollY", String(window.scrollY))}
+                          onMouseDown={() => sessionStorage.setItem("orderListScrollY", String(window.scrollY))}
                         >
                           {order.name}
                         </Link>
