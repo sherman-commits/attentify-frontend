@@ -140,11 +140,13 @@ export default function OrderPage() {
 
   // Reset restore flag on mount, restore scroll before paint
   const hasRestoredOrderRef = useRef(false);
+  const forceRefreshRef = useRef(false);
   useLayoutEffect(() => {
     hasRestoredOrderRef.current = false;
     const y = (location.state as any)?.scrollY || Number(sessionStorage.getItem("orderListScrollY"));
     if (y) {
       hasRestoredOrderRef.current = true;
+      forceRefreshRef.current = true;
       window.scrollTo({ top: y, behavior: "instant" as any });
     }
   }, []);
@@ -162,8 +164,12 @@ export default function OrderPage() {
       company_id: currentCompanyId,
     };
 
+    const forceRefresh = options.force || forceRefreshRef.current;
+    forceRefreshRef.current = false;
+
     const cachedList = orderListCache;
     const cacheMatches =
+      !forceRefresh &&
       cachedList &&
       Date.now() - cachedList.storedAt < ORDER_LIST_CACHE_TTL_MS &&
       JSON.stringify(cachedList.params) === JSON.stringify(requestParams);

@@ -305,6 +305,7 @@ export default function MessagePage() {
   }, [viewMode, currentPage, pageSize, assignedFilter, orderFilter, statusFilter, sortBy, sortOrder]);
 
   const hasRestoredRef = useRef(false);
+  const forceRefreshRef = useRef(false);
 
   const fetchMessages = async (options: { force?: boolean } = {}) => {
     if (!currentCompanyId) return;
@@ -322,8 +323,12 @@ export default function MessagePage() {
       sort_order: sortOrder,
     };
 
+    const forceRefresh = options.force || forceRefreshRef.current;
+    forceRefreshRef.current = false;
+
     const cachedList = messageListCache;
     const cacheMatches =
+      !forceRefresh &&
       cachedList &&
       Date.now() - cachedList.storedAt < MESSAGE_LIST_CACHE_TTL_MS &&
       JSON.stringify(cachedList.params) === JSON.stringify(requestParams);
@@ -374,6 +379,7 @@ export default function MessagePage() {
     const y = (location.state as any)?.scrollY || Number(sessionStorage.getItem("messageListScrollY"));
     if (y) {
       hasRestoredRef.current = true;
+      forceRefreshRef.current = true;
       window.scrollTo({ top: y, behavior: "instant" as any });
     }
   }, []);
