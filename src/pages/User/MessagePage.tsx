@@ -826,6 +826,7 @@ export default function MessagePage() {
                         to={`/message/${msg._id}`}
                         onMouseEnter={() => prefetchMessage(msg._id)}
                         onFocus={() => prefetchMessage(msg._id)}
+                        onClick={() => sessionStorage.setItem("messageListScrollY", String(window.scrollY))}
                       >
                         {msg.title || "(no subject)"}
                       </Link>

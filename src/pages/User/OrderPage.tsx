@@ -382,6 +382,7 @@ export default function OrderPage() {
                           className="font-medium text-blue-600 hover:text-blue-700"
                           onMouseEnter={() => prefetchOrder(order)}
                           onFocus={() => prefetchOrder(order)}
+                          onClick={() => sessionStorage.setItem("orderListScrollY", String(window.scrollY))}
                         >
                           {order.name}
                         </Link>
