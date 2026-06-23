@@ -305,26 +305,30 @@ export default function MessagePage() {
   }, [viewMode, currentPage, pageSize, assignedFilter, orderFilter, statusFilter, sortBy, sortOrder]);
 
   useEffect(() => {
-    // Restore scroll position from sessionStorage
-    const savedY = sessionStorage.getItem("messageListScrollY");
-    if (savedY) {
-      const y = parseInt(savedY, 10);
-      if (y > 0) {
-        // Wait for React to render, then restore
-        const timer = setTimeout(() => {
-          window.scrollTo({ top: y, behavior: "instant" as ScrollBehavior });
-        }, 100);
-        return () => clearTimeout(timer);
-      }
-    }
-  }, []);
-
-  // Save scroll position before navigating away
-  useEffect(() => {
+    // Save scroll on unmount
     return () => {
       sessionStorage.setItem("messageListScrollY", String(window.scrollY));
     };
-  });
+  }, []);
+
+  // Restore scroll after messages are rendered
+  const restoreScrollRef = useRef<number | null>(null);
+  useEffect(() => {
+    const savedY = sessionStorage.getItem("messageListScrollY");
+    if (savedY) {
+      restoreScrollRef.current = parseInt(savedY, 10);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (restoreScrollRef.current && restoreScrollRef.current > 0 && messages.length > 0) {
+      const y = restoreScrollRef.current;
+      restoreScrollRef.current = null;
+      setTimeout(() => {
+        window.scrollTo({ top: y, behavior: "instant" as ScrollBehavior });
+      }, 200);
+    }
+  }, [messages]);
 
   const fetchMessages = async (options: { force?: boolean } = {}) => {
     if (!currentCompanyId) return;
