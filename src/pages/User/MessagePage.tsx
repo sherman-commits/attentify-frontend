@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState, type ChangeEvent } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import Layout from "../../layouts/Layout";
 import {
   MagnifyingGlassIcon,
@@ -196,6 +196,7 @@ export default function MessagePage() {
   const { confirm } = useConfirmDialog();
   const { setTitle } = usePageTitle();
   const { user } = useUser();
+  const location = useLocation();
   const menuRef = useRef<HTMLDivElement>(null);
 
   const [search, setSearch] = useState<string>(cachedParams?.search || "");
@@ -396,6 +397,13 @@ export default function MessagePage() {
   useEffect(() => {
     fetchMessages();
   }, [currentCompanyId, currentPage, pageSize, search, viewMode, assignedFilter, orderFilter, effectiveStatusFilter, sortBy, sortOrder]);
+
+  // Re-fetch when navigating back from detail page
+  useEffect(() => {
+    if (location.pathname === "/message") {
+      fetchMessages({ force: true });
+    }
+  }, [location.pathname]);
 
   useEffect(() => {
     if (statusFilter !== "all" && !statusFilterOptions.includes(statusFilter)) {
