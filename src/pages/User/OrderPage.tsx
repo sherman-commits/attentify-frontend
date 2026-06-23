@@ -1,5 +1,5 @@
 ﻿import { useEffect, useState, useRef } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import axios from "axios";
 import Layout from "../../layouts/Layout";
 import { useNotification } from "../../context/NotificationContext";
@@ -102,6 +102,7 @@ export default function OrderPage() {
 
   const { notify } = useNotification();
   const { setTitle } = usePageTitle();
+  const location = useLocation();
 
   const { currentCompanyId } = useCompany();
 
@@ -137,19 +138,21 @@ export default function OrderPage() {
     );
   }, [pageSize, selectedShop, sortBy, sortOrder]);
 
-  // Restore scroll after loading completes
+  // Reset restore flag on mount, restore after loading
   const hasRestoredOrderRef = useRef(false);
   useEffect(() => {
-    if (hasRestoredOrderRef.current || loading || orders.length === 0) return;
-    const y = Number(sessionStorage.getItem("orderListScrollY"));
+    hasRestoredOrderRef.current = false;
+  }, []);
+
+  useEffect(() => {
+    if (hasRestoredOrderRef.current || loading) return;
+    const y = (location.state as any)?.scrollY || Number(sessionStorage.getItem("orderListScrollY"));
     if (!y) return;
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        window.scrollTo({ top: y, behavior: "auto" });
-        hasRestoredOrderRef.current = true;
-      });
-    });
-  }, [loading, orders.length]);
+    hasRestoredOrderRef.current = true;
+    setTimeout(() => {
+      window.scrollTo({ top: y, behavior: "auto" });
+    }, 50);
+  }, [loading]);
 
   const fetchOrders = async (options: { force?: boolean } = {}) => {
     if (!currentCompanyId) return;
@@ -364,10 +367,12 @@ export default function OrderPage() {
                       <td className="py-2 px-3">
                         <Link
                           to={`/order/${encodeURIComponent(String(order.name || order.order_id))}`}
+                          state={{ scrollY: window.scrollY }}
                           className="font-medium text-blue-600 hover:text-blue-700"
                           onMouseEnter={() => prefetchOrder(order)}
                           onFocus={() => prefetchOrder(order)}
                           onMouseDown={() => sessionStorage.setItem("orderListScrollY", String(window.scrollY))}
+                          onClick={() => sessionStorage.setItem("orderListScrollY", String(window.scrollY))}
                         >
                           {order.name}
                         </Link>

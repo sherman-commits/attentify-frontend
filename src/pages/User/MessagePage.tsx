@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState, type ChangeEvent } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import Layout from "../../layouts/Layout";
 import {
   MagnifyingGlassIcon,
@@ -195,6 +195,7 @@ export default function MessagePage() {
   const { confirm } = useConfirmDialog();
   const { setTitle } = usePageTitle();
   const { user } = useUser();
+  const location = useLocation();
   const menuRef = useRef<HTMLDivElement>(null);
 
   const [search, setSearch] = useState<string>(cachedParams?.search || "");
@@ -303,16 +304,6 @@ export default function MessagePage() {
     );
   }, [viewMode, currentPage, pageSize, assignedFilter, orderFilter, statusFilter, sortBy, sortOrder]);
 
-  // Save scroll on unmount and before page unload
-  useEffect(() => {
-    const save = () => sessionStorage.setItem("messageListScrollY", String(window.scrollY));
-    window.addEventListener("beforeunload", save);
-    return () => {
-      save();
-      window.removeEventListener("beforeunload", save);
-    };
-  }, []);
-
   const hasRestoredRef = useRef(false);
 
   const fetchMessages = async (options: { force?: boolean } = {}) => {
@@ -377,18 +368,20 @@ export default function MessagePage() {
     fetchMessages();
   }, [currentCompanyId, currentPage, pageSize, search, viewMode, assignedFilter, orderFilter, effectiveStatusFilter, sortBy, sortOrder]);
 
-  // Restore scroll after loading completes
+  // Reset restore flag on mount, restore after loading
   useEffect(() => {
-    if (hasRestoredRef.current || loading || messages.length === 0) return;
-    const y = Number(sessionStorage.getItem("messageListScrollY"));
+    hasRestoredRef.current = false;
+  }, []);
+
+  useEffect(() => {
+    if (hasRestoredRef.current || loading) return;
+    const y = (location.state as any)?.scrollY || Number(sessionStorage.getItem("messageListScrollY"));
     if (!y) return;
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        window.scrollTo({ top: y, behavior: "auto" });
-        hasRestoredRef.current = true;
-      });
-    });
-  }, [loading, messages.length]);
+    hasRestoredRef.current = true;
+    setTimeout(() => {
+      window.scrollTo({ top: y, behavior: "auto" });
+    }, 50);
+  }, [loading]);
 
   useEffect(() => {
     setSelected([]);
@@ -812,9 +805,11 @@ export default function MessagePage() {
                     <td className="px-6 py-4 w-4/10 text-blue-700 hover:underline">
                       <Link
                         to={`/message/${msg._id}`}
+                        state={{ scrollY: window.scrollY }}
                         onMouseEnter={() => prefetchMessage(msg._id)}
                         onFocus={() => prefetchMessage(msg._id)}
                         onMouseDown={() => sessionStorage.setItem("messageListScrollY", String(window.scrollY))}
+                        onClick={() => sessionStorage.setItem("messageListScrollY", String(window.scrollY))}
                       >
                         {msg.title || "(no subject)"}
                       </Link>
