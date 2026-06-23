@@ -195,7 +195,6 @@ export default function MessagePage() {
   const { confirm } = useConfirmDialog();
   const { setTitle } = usePageTitle();
   const { user } = useUser();
-  const location = useLocation();
   const menuRef = useRef<HTMLDivElement>(null);
 
   const [search, setSearch] = useState<string>(cachedParams?.search || "");
