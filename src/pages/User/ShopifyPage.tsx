@@ -61,13 +61,23 @@ export default function ShopifyPage() {
       return;
     }
 
-    const oauthUrl = `${baseUrl}/shopify/auth?user_id=${encodeURIComponent(user_id)}&company_id=${encodeURIComponent(company_id)}`;
+    const rawShop = window.prompt("Enter Shopify store domain, e.g. punkcasesnz.myshopify.com");
+    const shop = rawShop?.trim().replace(/^https?:\/\//, "").replace(/\/.*$/, "");
+    if (!shop) return;
+    if (!shop.endsWith(".myshopify.com")) {
+      notify("error", "Please enter a valid .myshopify.com store domain.");
+      return;
+    }
+
+    const oauthUrl = `${baseUrl}/shopify/auth?user_id=${encodeURIComponent(user_id)}&company_id=${encodeURIComponent(company_id)}&shop=${encodeURIComponent(shop)}`;
     window.location.href = oauthUrl;
   };
 
   const handleRemove = async (id: string) => {
     try {
-      await axios.delete(`${import.meta.env.VITE_API_URL || ""}/shopify/${id}`);
+      await axios.delete(`${import.meta.env.VITE_API_URL || ""}/shopify/${id}`, {
+        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+      });
       setShops(prev => prev.filter(shop => shop._id !== id));
     } catch (err) {
       console.error("Failed to remove Shopify shop", err);
