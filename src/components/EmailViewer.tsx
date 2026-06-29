@@ -9,6 +9,7 @@ type EmailViewerProps = {
   date: string;
   htmlBody: string;
   threadId?: string;
+  containerClassName?: string;
   //expended?: boolean;
   replyFromParent?: string;
   OnHandleReply?: () => void;
@@ -40,6 +41,7 @@ const EmailViewer: React.FC<EmailViewerProps> = ({
   to,
   date,
   htmlBody,
+  containerClassName = "bg-white border border-gray-300 p-4 max-w-5xl mx-auto mb-4",
   //expended,
 }) => {
   const [iframeHeight, setIframeHeight] = React.useState(600);
@@ -99,7 +101,7 @@ const EmailViewer: React.FC<EmailViewerProps> = ({
   };
 
   return (
-    <div className="bg-white border border-gray-300 p-4 max-w-5xl mx-auto mb-4">
+    <div className={containerClassName}>
       <header className="flex justify-between items-start mb-4 border-b border-gray-400 pb-4">
         <div>
           <h2 className="text-xl font-bold mb-2">{subject}</h2>

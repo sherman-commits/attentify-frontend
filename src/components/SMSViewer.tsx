@@ -6,6 +6,7 @@ type SMSViewerProps = {
   date: string;
   body: string;
   isExpanded?: boolean;
+  containerClassName?: string;
 };
 
 const SMSViewer: React.FC<SMSViewerProps> = ({
@@ -13,13 +14,14 @@ const SMSViewer: React.FC<SMSViewerProps> = ({
   to,
   date,
   body,
-  isExpanded
+  isExpanded,
+  containerClassName = "bg-white shadow-md p-6 max-w-5xl mx-auto"
 }) => {
 
   return (
     <div>
       {!isExpanded && (
-        <div className="bg-white  shadow-md p-6 max-w-5xl mx-auto">
+        <div className={containerClassName}>
           <header>
             <h2 className="text-xl font-bold mb-2">SMS</h2>
             <div className="flex gap-3 text-sm text-gray-600">
@@ -39,7 +41,7 @@ const SMSViewer: React.FC<SMSViewerProps> = ({
         </div>
       )}
       {isExpanded && (
-        <div className="bg-white  shadow-md p-6 max-w-5xl mx-auto">
+        <div className={containerClassName}>
           <header className="mb-4 border-b pb-4">
             <h2 className="text-xl font-bold mb-2">SMS</h2>
             <div className="flex gap-3 text-sm text-gray-600">
