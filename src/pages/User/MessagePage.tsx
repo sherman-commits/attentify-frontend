@@ -45,7 +45,6 @@ interface Message {
   assigned_to?: Member | null;
   order_match_status?: "matched" | "possible" | "unmatched" | "not_order" | "unknown";
   order_info?: OrderInfo;
-  inbox_email?: string;
   default_store_id?: string;
   default_store_shop?: string;
 }
@@ -850,7 +849,7 @@ export default function MessagePage() {
               }}
               className="border border-gray-300 px-3 py-2 text-sm font-normal text-gray-700"
             >
-              <option value="all">All messages</option>
+              <option value="all">Any order status</option>
               <option value="order">Order-related</option>
               <option value="other">Other</option>
               <option value="needs_review">Needs review</option>
@@ -867,8 +866,8 @@ export default function MessagePage() {
               }}
               className="border border-gray-300 px-3 py-2 text-sm font-normal text-gray-700"
             >
-              <option value="all">All stores</option>
-              <option value="unassigned">Unassigned</option>
+              <option value="all">Any store</option>
+              <option value="unassigned">No store set</option>
               {stores.map((store) => (
                 <option key={store.id} value={store.id}>
                   {store.shop}
@@ -982,7 +981,6 @@ export default function MessagePage() {
                   />
                 </th>
                 <th className="px-4 py-3 min-w-[150px] text-left">Client</th>
-                <th className="px-4 py-3 min-w-[170px] text-left">Inbox</th>
                 <th className="px-4 py-3 min-w-[170px] text-left">Store</th>
                 <th className="px-4 py-3 min-w-[240px] text-left">Title</th>
                 <th className="px-4 py-3 min-w-[120px] text-left">Ticket</th>
@@ -997,7 +995,7 @@ export default function MessagePage() {
             <tbody>
               {filteredMessages.length === 0 ? (
                 <tr>
-                  <td className="p-8 text-gray-400 text-center" colSpan={10}>
+                  <td className="p-8 text-gray-400 text-center" colSpan={9}>
                     No {viewLabel.toLowerCase()} emails found.
                   </td>
                 </tr>
@@ -1020,10 +1018,7 @@ export default function MessagePage() {
                       {msg.client}
                     </td>
                     <td className="px-4 py-4 text-sm text-gray-600">
-                      {msg.inbox_email || "-"}
-                    </td>
-                    <td className="px-4 py-4 text-sm text-gray-600">
-                      {msg.default_store_shop || "Unassigned"}
+                      {msg.default_store_shop || "No store set"}
                     </td>
                     <td className="px-4 py-4 text-blue-700 hover:underline">
                       <Link
