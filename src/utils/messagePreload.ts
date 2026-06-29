@@ -56,6 +56,11 @@ export function setCachedOrderInfo(messageId: string, orderInfo: OrderInfo) {
   });
 }
 
+export function clearCachedOrderInfo(messageId: string) {
+  orderInfoCache.delete(messageId);
+  orderInfoInflight.delete(messageId);
+}
+
 export async function fetchMessageDetailCached(messageId: string, options: { force?: boolean } = {}): Promise<Message> {
   const cached = getCachedMessageDetail(messageId);
   if (!options.force && cached) return cached;

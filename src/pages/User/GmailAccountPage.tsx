@@ -20,6 +20,8 @@ interface GmailAccount {
   status: "connected" | "disconnected";
   owner_name: string;
   store: Store | null;
+  stores?: Store[];
+  store_ids?: string[];
 }
 
 export default function GmailAccountPage() {
@@ -35,7 +37,7 @@ export default function GmailAccountPage() {
   const [stores, setStores] = useState<Store[]>([]);
 
   // Track unsaved changes
-  const [pendingChanges, setPendingChanges] = useState<Record<string, string>>({});
+  const [pendingChanges, setPendingChanges] = useState<Record<string, string[]>>({});
 
   useEffect(() => {
     setTitle("Accounts / Gmail");
@@ -90,24 +92,36 @@ export default function GmailAccountPage() {
   };
 
   // When user changes store in dropdown, keep it in pendingChanges
-  const handleStoreSelect = (id: string, storeId: string) => {
-    setPendingChanges((prev) => ({ ...prev, [id]: storeId }));
+  const handleStoreToggle = (id: string, storeId: string) => {
+    const account = accounts.find((item) => item.id === id);
+    const currentStoreIds = pendingChanges[id] ?? account?.store_ids ?? account?.stores?.map((store) => store.id) ?? [];
+    const nextStoreIds = currentStoreIds.includes(storeId)
+      ? currentStoreIds.filter((item) => item !== storeId)
+      : [...currentStoreIds, storeId];
+    setPendingChanges((prev) => ({ ...prev, [id]: nextStoreIds }));
   };
 
   const handleSaveChanges = async () => {
     try {
       await Promise.all(
-        Object.entries(pendingChanges).map(async ([id, store_id]) => {
+        Object.entries(pendingChanges).map(async ([id, store_ids]) => {
           await axios.put(
             `${import.meta.env.VITE_API_URL || ""}/gmail/${id}/store`,
-            { field: "store_id", value: store_id },
+            { field: "store_ids", value: store_ids },
             { headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } }
           );
 
-          const store = stores.find((s) => s.id === store_id);
+          const selectedStores = stores.filter((store) => store_ids.includes(store.id));
           setAccounts((prev) =>
             prev.map((acc) =>
-              acc.id === id ? { ...acc, store: store ? { id: store_id, shop: store.shop } : null } : acc
+              acc.id === id
+                ? {
+                    ...acc,
+                    stores: selectedStores,
+                    store_ids,
+                    store: selectedStores.length === 1 ? selectedStores[0] : null,
+                  }
+                : acc
             )
           );
         })
@@ -171,25 +185,32 @@ export default function GmailAccountPage() {
                       <td className="px-3 py-2">{account.owner_name}</td>
                       <td className="px-3 py-2">
                         {user?.role === "company_owner" || user?.role === "store_owner" ? (
-                          <select
-                            value={
-                              pendingChanges[account.id] !== undefined
-                                ? pendingChanges[account.id]
-                                : account.store?.id || ""
-                            }
-                            onChange={(e) => handleStoreSelect(account.id, e.target.value)}
-                            className="border border-gray-300 rounded px-2 py-1 text-sm"
-                          >
-                            <option value="">No store selected</option>
-                            {stores.map((store) => (
-                              <option key={store.id} value={store.id}>
-                                {store.shop}
-                              </option>
-                            ))}
-                          </select>
+                          <div className="flex flex-col gap-1">
+                            {stores.map((store) => {
+                              const selectedStoreIds =
+                                pendingChanges[account.id] ??
+                                account.store_ids ??
+                                account.stores?.map((item) => item.id) ??
+                                [];
+                              return (
+                                <label key={store.id} className="inline-flex items-center gap-2">
+                                  <input
+                                    type="checkbox"
+                                    checked={selectedStoreIds.includes(store.id)}
+                                    onChange={() => handleStoreToggle(account.id, store.id)}
+                                    className="h-4 w-4 border-gray-300 text-blue-600"
+                                  />
+                                  {store.shop}
+                                </label>
+                              );
+                            })}
+                            {stores.length === 0 && <span className="text-gray-500">No connected stores</span>}
+                          </div>
                         ) : (
                           <span className="text-gray-700">
-                            {account.store?.shop || "No store selected"}
+                            {account.stores?.length
+                              ? account.stores.map((store) => store.shop).join(", ")
+                              : "No store selected"}
                           </span>
                         )}
                       </td>

@@ -43,6 +43,10 @@ export type Message = {
   resolved_by_ai?: boolean;
   comments?: Comment[];
   order_info?: OrderInfo;
+  default_store_id?: string;
+  default_store_shop?: string;
+  order_matching_store_ids?: string[];
+  order_matching_store_shops?: string[];
 };
 
 export interface OrderInfo {

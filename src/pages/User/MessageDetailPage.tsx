@@ -18,6 +18,7 @@ import { initSocket } from "../../services/socket";
 import {
   fetchMessageDetailCached,
   fetchOrderInfoCached,
+  clearCachedOrderInfo,
   getCachedMessageDetail,
   getCachedOrderInfo,
   setCachedMessageDetail,
@@ -254,7 +255,7 @@ const MessageDetailPage = () => {
             search: "",
             page: 1,
             size: 50,
-            shop: "",
+            shop: message?.default_store_shop || "",
             company_id: currentCompanyId,
             email,
           },
@@ -326,6 +327,41 @@ const MessageDetailPage = () => {
       notify("error", "Failed to update ticket status");
     } finally {
       setUpdatingStatus(false);
+    }
+  };
+
+  const updateMessageStore = async (storeId: string) => {
+    if (!message?._id || storeId === (message.default_store_id || "")) return;
+
+    try {
+      const response = await axios.patch(
+        `${import.meta.env.VITE_API_URL || ""}/message/${message._id}`,
+        {
+          field: "default_store_id",
+          value: storeId,
+        },
+        {
+          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+        }
+      );
+      const selectedIndex = message.order_matching_store_ids?.indexOf(storeId) ?? -1;
+      const nextMessage = {
+        ...message,
+        default_store_id: response.data?.value || storeId,
+        default_store_shop: selectedIndex >= 0 ? message.order_matching_store_shops?.[selectedIndex] : "",
+        order_info: undefined,
+      };
+      setMessage(nextMessage);
+      setOrderInfo(null);
+      setCachedMessageDetail(nextMessage);
+      if (message._id) {
+        clearCachedOrderInfo(message._id);
+      }
+      hasFetchedOrder.current = false;
+      notify("success", "Message store updated");
+    } catch (err) {
+      console.error("Failed to update message store", err);
+      notify("error", "Failed to update message store");
     }
   };
 
@@ -434,6 +470,23 @@ const MessageDetailPage = () => {
                       ))}
                     </select>
                   </label>
+                  {(message.order_matching_store_ids?.length || 0) > 1 && (
+                    <label className="mt-3 flex flex-col gap-1 text-xs font-medium text-gray-600">
+                      Store
+                      <select
+                        value={message.default_store_id || ""}
+                        onChange={(event) => updateMessageStore(event.target.value)}
+                        className="border border-gray-300 px-3 py-2 text-sm font-normal text-gray-700"
+                      >
+                        <option value="">Auto / Review</option>
+                        {(message.order_matching_store_ids || []).map((storeId, index) => (
+                          <option key={storeId} value={storeId}>
+                            {message.order_matching_store_shops?.[index] || storeId}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  )}
                 </div>
               )}
 
@@ -453,7 +506,7 @@ const MessageDetailPage = () => {
                           search: orderNumber,
                           page: 1,
                           size: 1,
-                          shop: "",
+                          shop: message?.default_store_shop || "",
                           company_id: currentCompanyId,
                           include_actions: true,
                         },

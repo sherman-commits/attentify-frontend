@@ -48,6 +48,8 @@ interface Message {
   order_info?: OrderInfo;
   default_store_id?: string;
   default_store_shop?: string;
+  order_matching_store_ids?: string[];
+  order_matching_store_shops?: string[];
 }
 
 interface Store {
@@ -586,6 +588,25 @@ export default function MessagePage() {
     }
   };
 
+  const handleMessageStoreSelect = async (storeId: string, msg: Message) => {
+    try {
+      await axios.patch(
+        `${import.meta.env.VITE_API_URL}/message/${msg._id}`,
+        {
+          field: "default_store_id",
+          value: storeId,
+        },
+        {
+          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+        }
+      );
+      notify("success", "Message store updated.");
+      fetchMessages({ force: true });
+    } catch (error) {
+      notify("error", "Failed to update message store.");
+    }
+  };
+
   const handleDelete = async (id: string) => {
     if (viewMode === "trashed" && !canPermanentlyDeleteMessages) {
       notify("error", "Permanent delete is not enabled for your account.");
@@ -1059,7 +1080,22 @@ export default function MessagePage() {
                       {msg.client}
                     </td>
                     {visibleColumns.store && <td className="px-4 py-4 text-sm text-gray-600">
-                      {msg.default_store_shop || "No store set"}
+                      {(msg.order_matching_store_ids?.length || 0) > 1 ? (
+                        <select
+                          value={msg.default_store_id || ""}
+                          onChange={(event) => handleMessageStoreSelect(event.target.value, msg)}
+                          className="border border-gray-300 bg-white px-2 py-1 text-sm text-gray-700"
+                        >
+                          <option value="">Auto / Review</option>
+                          {(msg.order_matching_store_ids || []).map((storeId, index) => (
+                            <option key={storeId} value={storeId}>
+                              {msg.order_matching_store_shops?.[index] || storeId}
+                            </option>
+                          ))}
+                        </select>
+                      ) : (
+                        msg.default_store_shop || msg.order_matching_store_shops?.[0] || "No store set"
+                      )}
                     </td>}
                     <td className="px-4 py-4 text-blue-700 hover:underline">
                       <Link
