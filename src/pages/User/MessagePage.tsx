@@ -316,7 +316,10 @@ export default function MessagePage() {
     const handleGmailUpdate = (data: { company_id?: string }) => {
       console.log("Gmail update:", data);
       if (currentCompanyId && data.company_id && data.company_id !== currentCompanyId) return;
-      fetchMessages({ force: true });
+      setSortBy("last_updated");
+      setSortOrder("desc");
+      setCurrentPage(1);
+      fetchMessages({ force: true, sortBy: "last_updated", sortOrder: "desc", page: 1 });
     };
 
     socket.on("connect", handleConnect);
@@ -417,21 +420,23 @@ export default function MessagePage() {
   const hasRestoredRef = useRef(false);
   const forceRefreshRef = useRef(false);
 
-  const fetchMessages = async (options: { force?: boolean } = {}) => {
+  const fetchMessages = async (
+    options: { force?: boolean; sortBy?: SortBy; sortOrder?: SortOrder; page?: number } = {}
+  ) => {
     if (!currentCompanyId) return;
 
     const requestParams: MessageListRequestParams = {
       company_id: currentCompanyId,
       search,
-      page: currentPage,
+      page: options.page ?? currentPage,
       size: pageSize,
       view_mode: viewMode,
       assigned_filter: assignedFilter,
       order_filter: orderFilter,
       store_id: storeFilter === "all" ? "" : storeFilter,
       status_filter: effectiveStatusFilter,
-      sort_by: sortBy,
-      sort_order: sortOrder,
+      sort_by: options.sortBy ?? sortBy,
+      sort_order: options.sortOrder ?? sortOrder,
     };
 
     const needsRefresh = sessionStorage.getItem(MESSAGE_LIST_REFRESH_KEY) === "1";
